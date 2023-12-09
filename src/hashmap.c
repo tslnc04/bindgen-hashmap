@@ -1,4 +1,5 @@
 #include "hashmap.h"
+#include "stdio.h"
 
 // Hashes the given key using the secret key in the HashMap using SipHash-2-4
 // with an 8 byte output and stores the result in hash.
@@ -24,11 +25,26 @@ static void hashmap_grow(HashMap *map, size_t new_buckets) {
     return;
   }
 
+  Entry **old_entries = map->entries;
+  size_t old_buckets = map->buckets;
+
+  map->len = 0;
   map->buckets = new_buckets;
-  map->entries = realloc(map->entries, new_buckets * sizeof(*(map->entries)));
-  for (size_t i = map->buckets; i < new_buckets; i++) {
-    map->entries[i] = NULL;
+  map->entries = calloc(new_buckets, sizeof(*(map->entries)));
+
+  for (size_t i = 0; i < old_buckets; i++) {
+    Entry *entry = old_entries[i];
+    while (entry != NULL) {
+      hashmap_insert(map, entry->key, entry->value);
+
+      Entry *next = entry->next;
+      free(entry->key);
+      free(entry);
+      entry = next;
+    }
   }
+
+  free(old_entries);
 }
 
 // If the HashMap has no buckets, sets the number of buckets to 8. If the load
@@ -85,6 +101,24 @@ HashMap *hashmap_with_buckets(size_t buckets) {
   return map;
 }
 
+// Returns the number of keys stored in the HashMap.
+size_t hashmap_len(const HashMap *map) {
+  if (map == NULL) {
+    return 0;
+  }
+
+  return map->len;
+}
+
+// Returns the ratio of keys to buckets in the HashMap.
+double hashmap_load_factor(const HashMap *map) {
+  if (map == NULL) {
+    return 0;
+  }
+
+  return (double)map->len / map->buckets;
+}
+
 // Sets the value for the given key. If the key already exists, the old value is
 // returned. Takes ownership of the value and frees it when the map is freed.
 // The key is copied and no ownership is taken.
@@ -113,6 +147,7 @@ void *hashmap_insert(HashMap *map, const char *key, void *value) {
   (*entry)->key = strdup(key);
   (*entry)->value = value;
   (*entry)->next = NULL;
+  map->len++;
 
   return NULL;
 }
@@ -121,6 +156,7 @@ void *hashmap_insert(HashMap *map, const char *key, void *value) {
 // returned.
 void *hashmap_get(const HashMap *map, const char *key) {
   if (map == NULL || map->entries == NULL) {
+    printf("map or entries is null\n");
     return NULL;
   }
 
@@ -180,7 +216,9 @@ void hashmap_free(HashMap **map) {
     while (entry != NULL) {
       Entry *next = entry->next;
       free(entry->key);
-      free(entry->value);
+      if (entry->value != NULL) {
+        free(entry->value);
+      }
       free(entry);
       entry = next;
     }

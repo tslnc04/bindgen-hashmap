@@ -28,6 +28,12 @@ HashMap *hashmap_new();
 // Creates a new HashMap with the given number of buckets.
 HashMap *hashmap_with_buckets(size_t buckets);
 
+// Returns the number of keys stored in the HashMap.
+size_t hashmap_len(const HashMap *map);
+
+// Returns the ratio of keys to buckets in the HashMap.
+double hashmap_load_factor(const HashMap *map);
+
 // Sets the value for the given key. If the key already exists, the old value is
 // returned. Takes ownership of the value and frees it when the map is freed.
 // The key is copied and no ownership is taken.

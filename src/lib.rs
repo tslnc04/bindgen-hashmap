@@ -37,6 +37,21 @@ impl<V> HashMap<V> {
         }
     }
 
+    /// Returns the number of keys stored in the HashMap.
+    pub fn len(&self) -> usize {
+        unsafe { hashmap::hashmap_len(self.ptr) }
+    }
+
+    /// Returns true if the HashMap contains no elements.
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    /// Returns the ratio of keys to buckets in the HashMap.
+    pub fn load_factor(&self) -> f64 {
+        unsafe { hashmap::hashmap_load_factor(self.ptr) }
+    }
+
     /// Insert a key-value pair into the hashmap. If the key already exists, the
     /// old value is returned.
     pub fn insert(&mut self, key: &str, value: Box<V>) -> Option<Box<V>> {
